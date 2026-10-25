@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Entregables y archivos de instrucciones no forman parte del código publicado.
+/docs/
+/capturas/
+/DEEPSEEK_TASK.md
+/README.md
+*.docx
+*.pdf
+*.zip
+*.apk
