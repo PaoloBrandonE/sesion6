@@ -71,6 +71,7 @@ class MemoryRepository implements HabitRepository {
 }
 
 class DeniedPhotos implements PhotoService {
+  int settingsCalls = 0;
   @override
   Future<String?> capture() async => throw const PhotoFailure(
     'Permiso denegado. Puedes guardar sin foto.',
@@ -81,7 +82,9 @@ class DeniedPhotos implements PhotoService {
   @override
   Future<void> remove(String path) async {}
   @override
-  Future<void> settings() async {}
+  Future<void> settings() async {
+    settingsCalls++;
+  }
 }
 
 Future<AppServices> services() async {
@@ -185,6 +188,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tapVisible(tester, find.byKey(const Key('camera')));
+      await tapVisible(tester, find.text('Continuar'));
       expect(find.text('Abrir ajustes de cámara'), findsOneWidget);
       expect(
         find.text('Permiso denegado. Puedes guardar sin foto.'),

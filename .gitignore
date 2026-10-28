@@ -48,7 +48,6 @@ app.*.map.json
 /docs/
 /capturas/
 /DEEPSEEK_TASK.md
-/README.md
 *.docx
 *.pdf
 *.zip

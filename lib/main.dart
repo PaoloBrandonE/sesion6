@@ -6,6 +6,7 @@ import 'screens/habit_form_screen.dart';
 import 'screens/habit_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'utils/app_constants.dart';
+import 'utils/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,15 +75,15 @@ class _ResumenSemanalAppState extends State<ResumenSemanalApp> {
       themeMode: widget.services.preferences.dark
           ? ThemeMode.dark
           : ThemeMode.light,
-      initialRoute: '/',
+      initialRoute: AppRoutes.dashboard,
       onGenerateRoute: (settings) {
         final services = widget.services;
         Widget page;
         switch (settings.name) {
-          case '/':
+          case AppRoutes.dashboard:
             page = DashboardScreen(services: services);
             break;
-          case '/formulario':
+          case AppRoutes.form:
             final args = settings.arguments;
             page = args == null || args is HabitFormArgs
                 ? HabitFormScreen(
@@ -91,13 +92,13 @@ class _ResumenSemanalAppState extends State<ResumenSemanalApp> {
                   )
                 : const _InvalidRoute();
             break;
-          case '/detalle':
+          case AppRoutes.detail:
             final args = settings.arguments;
             page = args is HabitDetailArgs
                 ? HabitDetailScreen(services: services, args: args)
                 : const _InvalidRoute();
             break;
-          case '/ajustes':
+          case AppRoutes.settings:
             page = SettingsScreen(
               preferences: services.preferences,
               onThemeChanged: () {

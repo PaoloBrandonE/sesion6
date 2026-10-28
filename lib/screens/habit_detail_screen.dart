@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/habit_entry.dart';
 import '../services/local_services.dart';
 import '../widgets/habit_widgets.dart';
+import '../utils/app_routes.dart';
 import 'habit_form_screen.dart';
 
 class HabitDetailArgs {
@@ -37,7 +38,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   Future<void> _edit(HabitEntry entry) async {
     final changed = await Navigator.pushNamed<bool>(
       context,
-      '/formulario',
+      AppRoutes.form,
       arguments: HabitFormArgs(entry),
     );
     if (changed == true && mounted) {

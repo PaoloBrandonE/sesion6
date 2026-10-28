@@ -74,7 +74,10 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     for (final controller in [_title, _minutes, _email, _notes, _dateText]) {
       controller.dispose();
     }
-    if (!_kept && _photo != null && _photo != _original?.photoPath) {
+    if (!_saving &&
+        !_kept &&
+        _photo != null &&
+        _photo != _original?.photoPath) {
       unawaited(widget.services.photos.remove(_photo!));
     }
     super.dispose();
@@ -118,45 +121,73 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     }
   }
 
+  Future<void> _requestPhoto() async {
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Usar la cámara'),
+        content: const Text(
+          'Usaré la cámara para adjuntar una fotografía al registro. '
+          'La imagen se guardará en este dispositivo. Puedes continuar sin fotografía.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || approved != true) return;
+    await _capture();
+  }
+
   Future<void> _save() async {
     if (_saving || _camera || _recovery || !_key.currentState!.validate()) {
       return;
     }
     FocusScope.of(context).unfocus();
+    // Capturo los valores antes del primer await; después no leo controladores desmontados.
+    final repository = widget.services.repository;
+    final photos = widget.services.photos;
+    final oldPhoto = _original?.photoPath;
+    final value = HabitEntry(
+      id: _original?.id,
+      title: _title.text,
+      category: _category!,
+      minutes: int.parse(_minutes.text),
+      date: _date,
+      email: _email.text,
+      notes: _notes.text,
+      photoPath: _photo,
+      completed: _original?.completed ?? false,
+    );
+    bool committed = false;
     setState(() {
       _saving = true;
       _message = null;
       _settings = false;
     });
     try {
-      // Validación asíncrona real contra SQLite antes de escribir.
-      if (await widget.services.repository.exists(
-        _title.text,
-        _date,
-        excludingId: _original?.id,
-      )) {
-        throw const DuplicateHabit();
-      }
-      final value = HabitEntry(
-        id: _original?.id,
-        title: _title.text,
-        category: _category!,
-        minutes: int.parse(_minutes.text),
-        date: _date,
-        email: _email.text,
-        notes: _notes.text,
-        photoPath: _photo,
-        completed: _original?.completed ?? false,
+      final duplicate = await repository.exists(
+        value.title,
+        value.date,
+        excludingId: value.id,
       );
-      await widget.services.repository.save(value);
+      if (!mounted) return;
+      if (duplicate) throw const DuplicateHabit();
+      await repository.save(value);
+      committed = true;
+      if (oldPhoto != null && oldPhoto != value.photoPath) {
+        await photos.remove(oldPhoto);
+      }
+      if (!mounted) return;
       _kept = true;
-      final oldPhoto = _original?.photoPath;
-      if (oldPhoto != null && oldPhoto != _photo) {
-        await widget.services.photos.remove(oldPhoto);
-      }
-      if (mounted) {
-        Navigator.pop(context, true); // Resultado que recarga lista/detalle.
-      }
+      Navigator.pop(context, true);
     } on DuplicateHabit catch (error) {
       if (mounted) setState(() => _message = error.toString());
     } catch (_) {
@@ -167,7 +198,14 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      } else if (!committed &&
+          value.photoPath != null &&
+          value.photoPath != oldPhoto) {
+        // La limpieza diferida evita borrar una foto mientras SQLite aún la guarda.
+        await photos.remove(value.photoPath!);
+      }
     }
   }
 
@@ -177,6 +215,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     return PopScope(
       canPop: !busy,
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: Text(_original == null ? 'Nuevo registro' : 'Editar registro'),
         ),
@@ -293,7 +332,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                   ],
                   OutlinedButton.icon(
                     key: const Key('camera'),
-                    onPressed: busy ? null : _capture,
+                    onPressed: busy ? null : _requestPhoto,
                     icon: const Icon(Icons.camera_alt_outlined),
                     label: Text(
                       _photo == null

@@ -40,6 +40,8 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('camera')));
     await tester.tap(find.byKey(const Key('camera')));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
     // La toma se confirma desde la interfaz nativa de la cámara del emulador.
     // Da tiempo para aceptar el permiso y confirmar el disparo.
     await Future<void>.delayed(const Duration(seconds: 50));

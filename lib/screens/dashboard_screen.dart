@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/habit_entry.dart';
 import '../services/local_services.dart';
 import '../widgets/habit_widgets.dart';
+import '../utils/app_routes.dart';
 import 'habit_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -50,14 +51,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         IconButton(
           tooltip: 'Ajustes',
-          onPressed: () => _open('/ajustes'),
+          onPressed: () => _open(AppRoutes.settings),
           icon: const Icon(Icons.settings_outlined),
         ),
       ],
     ),
     floatingActionButton: FloatingActionButton.extended(
       key: const Key('newHabit'),
-      onPressed: () => _open('/formulario'),
+      onPressed: () => _open(AppRoutes.form),
       icon: const Icon(Icons.add),
       label: const Text('Nuevo registro'),
     ),
@@ -325,8 +326,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               for (final entry in entries)
                 HabitCard(
                   entry: entry,
-                  onTap: () =>
-                      _open('/detalle', arguments: HabitDetailArgs(entry.id!)),
+                  onTap: () => _open(
+                    AppRoutes.detail,
+                    arguments: HabitDetailArgs(entry.id!),
+                  ),
                 ),
               const SizedBox(height: 96),
             ],
